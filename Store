@@ -1,1 +1,139 @@
+using System;
+using System.Collections.Generic;
 
+namespace Napilnik2
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Good iPhone12 = new Good("IPhone 12");
+            Good iPhone11 = new Good("IPhone 11");
+
+            Warehouse warehouse = new Warehouse();
+
+            Shop shop = new Shop(warehouse);
+
+            warehouse.Add(iPhone12, 10);
+            warehouse.Add(iPhone11, 1);
+
+            warehouse.ShowAllProducts();
+
+            Cart cart = shop.CreateCart();
+            cart.Add(iPhone12, 4);
+            cart.Add(iPhone11, 3); //при такой ситуации возникает ошибка так, как нет нужного количества товара на складе
+
+            cart.ShowAllProducts();
+
+            //Console.WriteLine(cart.Order().Paylink);
+
+            cart.Add(iPhone12, 9); //Ошибка, после заказа со склада убираются заказанные товары
+        }
+    }
+
+    class Good
+    { 
+        private readonly string _label;
+
+        public string Label => _label;
+
+        public Good(string label)
+        {
+            _label = label;
+        }
+    }
+
+    class Warehouse
+    {
+        private Dictionary<Good, int> _storage = new Dictionary<Good, int>();
+
+        public IReadOnlyDictionary<Good, int> Storage => _storage;
+
+        public void Add(Good good, int count)
+        {
+            if (count <= 0)
+                throw new ArgumentOutOfRangeException(nameof(count));
+            else
+            {
+                _storage.Add(good, count);
+            }
+        }
+
+        public void Deliver(Good good, int count)
+        {
+            int currentAmountOfItems = _storage[good] - count;
+            if (currentAmountOfItems ==0)
+                _storage.Remove(good);
+            else
+                _storage[good] = currentAmountOfItems;
+        }
+
+        public void ShowAllProducts()
+        {
+            Console.Write("Товар на складе: ");
+            foreach (var good in _storage)
+            {
+                Console.Write($"{good.Key.Label} - {good.Value} шт.; ");
+            }
+            Console.WriteLine();
+        }
+    }
+
+    class Shop
+    {
+        private Warehouse _warehouse;
+
+        public Shop(Warehouse warehouse)
+        {
+            _warehouse = warehouse;
+        }   
+
+        public bool CanSell(Good good, int count)
+        {
+            if (count <=_warehouse.Storage[good])
+            {
+                _warehouse.Deliver(good, count);
+                return true;
+            }
+            else
+            {
+                Console.WriteLine($"на складе не хватает товара:{good.Label}, их осталось - {_warehouse.Storage[good]} шт.");
+                return false;
+            }
+        }
+
+        public Cart CreateCart() => new Cart(this);
+    }
+
+    class Cart
+    {
+        private Dictionary<Good, int> _bag = new Dictionary<Good, int>();
+        private Shop _shop;
+
+        public  Cart(Shop shop)
+        {
+            _shop = shop;
+        }
+
+        public void Add(Good good, int count)
+        {
+            if (count<=0)
+                throw new ArgumentOutOfRangeException(nameof(count));
+            else
+            {
+                if (_shop.CanSell(good, count))
+                    _bag.Add(good, count);
+            }
+        }
+
+        public void ShowAllProducts()
+        {
+            Console.Write("Товар в сумке: ");
+            foreach (var good in _bag)
+            {
+                Console.Write($"{good.Key.Label} - {good.Value} шт.; ");
+            }
+            Console.WriteLine();
+        }
+    }
+}
