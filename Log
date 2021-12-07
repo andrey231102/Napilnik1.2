@@ -1,0 +1,91 @@
+using System;
+using System.IO;
+
+namespace Lesson
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            PathFinder fileLogWritter = new FileLogWritter("diskC");
+            PathFinder consoleLogWritter = new ConsoleLogWritter();
+            PathFinder fileFridayLogWritter = new SecureLogWritter(fileLogWritter, DayOfWeek.Friday);
+            PathFinder consoleFridayLogWritter = new SecureLogWritter(consoleLogWritter, DayOfWeek.Friday);
+            PathFinder compositeLogWritter = new CompositeLogWritter(consoleLogWritter, fileFridayLogWritter);
+        }
+    }
+
+    interface ILogger
+    {
+        public void WriteError(string message);
+    }
+
+    class PathFinder
+    {
+        private ILogger _logger;
+
+        public virtual void Find(string message)
+        {
+            _logger.WriteError(message);
+        }
+    }
+
+    class FileLogWritter : PathFinder, ILogger
+    {
+        private string _path;
+
+        public FileLogWritter(string path)
+        {
+            _path = path;
+        }
+
+        public void WriteError(string message)
+        {
+            File.WriteAllText(_path, message);
+        }
+    }
+
+    class ConsoleLogWritter : PathFinder, ILogger
+    {
+        public void WriteError(string message)
+        {
+            Console.WriteLine(message); ;
+        }
+    }
+
+    class SecureLogWritter : PathFinder, ILogger
+    {
+        private PathFinder _fileLogWritter;
+        private DayOfWeek _dayOfWeek;
+
+        public SecureLogWritter(PathFinder fileLogWritter, DayOfWeek dayOfWeek)
+        {
+            _fileLogWritter = fileLogWritter;
+            _dayOfWeek = dayOfWeek;
+        }
+
+        public void WriteError(string message)
+        {
+            if (DateTime.Now.DayOfWeek == _dayOfWeek)
+                _fileLogWritter.Find(message);
+        }
+    }
+
+    class CompositeLogWritter : PathFinder, ILogger
+    {
+        private PathFinder[] _logWritters;
+
+        public CompositeLogWritter(params PathFinder[] logWritters)
+        {
+            _logWritters = logWritters;
+        }
+
+        public void WriteError(string message)
+        {
+            foreach (var logWritter in _logWritters)
+            {
+                logWritter.Find(message);
+            }
+        }
+    }
+}
