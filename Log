@@ -36,6 +36,9 @@ namespace Lesson
 
         public FileLogWritter(string path)
         {
+            if (string.IsNullOrEmpty(path))
+                throw new NullReferenceException();
+
             _path = path;
         }
 
@@ -60,6 +63,9 @@ namespace Lesson
 
         public SecureLogWritter(PathFinder fileLogWritter, DayOfWeek dayOfWeek)
         {
+            if (fileLogWritter == null)
+                throw new NullReferenceException(nameof(fileLogWritter));
+
             _fileLogWritter = fileLogWritter;
             _dayOfWeek = dayOfWeek;
         }
@@ -77,15 +83,16 @@ namespace Lesson
 
         public CompositeLogWritter(params PathFinder[] logWritters)
         {
+            if (logWritters == null)
+                throw new NullReferenceException(nameof(logWritters));
+
             _logWritters = logWritters;
         }
 
         public void WriteError(string message)
         {
             foreach (var logWritter in _logWritters)
-            {
                 logWritter.Find(message);
-            }
         }
     }
 }
